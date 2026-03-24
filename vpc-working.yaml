@@ -1,0 +1,134 @@
+# Description of what this change includes: Created VPC with 3 public subnets across 3 Availability Zones
+# Revision number: 1
+# Date: 03/24/2026
+AWSTemplateFormatVersion: '2010-09-09'
+Description: AWS CloudFormation template to create a VPC in us-west-2 with 3 public subnets across 3 Availability Zones
+
+# Parameters let you customize values if needed
+Parameters:
+  VpcCidr:
+    Type: String
+    Default: 10.0.0.0/16
+    Description: CIDR block for the VPC
+
+# Resources section creates the AWS infrastructure
+Resources:
+
+  # Creates the main Virtual Private Cloud
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: VPC-muscis0863
+
+  # Creates an Internet Gateway so the VPC can reach the internet
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: VPC-muscis0863-IGW
+
+  # Attaches the Internet Gateway to the VPC
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Creates a public route table
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: VPC-muscis0863-Public-RT
+
+  # Creates a default route to the internet
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  # Public subnet in Availability Zone us-west-2a
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: us-west-2a
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: VPC-muscis0863-PublicSubnet-1
+
+  # Public subnet in Availability Zone us-west-2b
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: us-west-2b
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: VPC-muscis0863-PublicSubnet-2
+
+  # Public subnet in Availability Zone us-west-2c
+  PublicSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: us-west-2c
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: VPC-muscis0863-PublicSubnet-3
+
+  # Associates subnet 1 with the public route table
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  # Associates subnet 2 with the public route table
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  # Associates subnet 3 with the public route table
+  PublicSubnet3RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet3
+      RouteTableId: !Ref PublicRouteTable
+
+# Outputs display important values after the stack is created
+Outputs:
+  VPCId:
+    Description: ID of the created VPC
+    Value: !Ref VPC
+
+  PublicSubnet1Id:
+    Description: ID of the first public subnet
+    Value: !Ref PublicSubnet1
+
+  PublicSubnet2Id:
+    Description: ID of the second public subnet
+    Value: !Ref PublicSubnet2
+
+  PublicSubnet3Id:
+    Description: ID of the third public subnet
+    Value: !Ref PublicSubnet3
